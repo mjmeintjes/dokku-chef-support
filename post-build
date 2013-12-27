@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
+APP="$1"; IMAGE="$2"
+
+CHEF_INSTALL=$(cat <<EOF
+#!/bin/bash
+if [ ! -d /opt/chef ]; then
+    apt-get -y update
+    echo "installing curl"
+    apt-get -y install curl
+
+    echo "installing chef"
+    curl -L https://www.opscode.com/chef/install.sh | bash
+    echo 'gem: --no-ri --no-rdoc' > ~/.gemrc
+    /opt/chef/embedded/bin/gem install berkshelf
+fi
+EOF
+)
+COOKBOOK_INSTALL=$(cat <<EOF
+#!/bin/bash
+mkdir -p /chef/cookbooks
+echo '
+file_cache_path /chef
+cookbook_path /chef/cookbooks
+' > /chef/solo.rb
+cat /chef/solo.rb
+cd /app/provision && /opt/chef/embedded/bin/berks install --path /chef/cookbooks
+chef-solo -c /chef/solo.rb -o "recipe[$APP::default]"
+EOF
+)
+
+#install chef if required
+id=$(docker run -d $IMAGE /bin/bash -c "$CHEF_INSTALL")
+docker attach $id
+test $(docker wait $id) -eq 0
+docker commit $id $IMAGE > /dev/null
+
+#install cookbooks
+id=$(docker run -d $IMAGE /bin/bash -c "$COOKBOOK_INSTALL")
+docker attach $id
+test $(docker wait $id) -eq 0
+docker commit $id $IMAGE > /dev/null
+
