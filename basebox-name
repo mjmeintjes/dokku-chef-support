@@ -1,8 +1,10 @@
+#!/usr/bin/env bash
+set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 IMAGE="$1"
-
-#test if the image already exists, if it does then return it
-if docker images | grep --quiet $IMAGE; then
+#test if the image already exists, if it does then return i
+if docker images | grep --quiet "$IMAGE\s"; then
   echo $IMAGE
 else
   echo "mattsum/buildstep-chef"
 fi
+
