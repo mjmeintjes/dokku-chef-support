@@ -1,0 +1,8 @@
+IMAGE="$1"
+
+#test if the image already exists, if it does then return it
+if docker images | grep --quiet $IMAGE; then
+  echo $IMAGE
+else
+  echo "mattsum/buildstep-chef"
+fi

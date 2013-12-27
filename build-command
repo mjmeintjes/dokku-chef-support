@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
+
+APP="$1"; IMAGE="app/$APP"
+CACHE_DIR="$DOKKU_ROOT/$APP/cache"
+CHEF_DIR=/cache/chef
+APT_DIR=/cache/apt
+COOKBOOK_INSTALL=$(cat <<EOF
+#!/bin/bash
+sleep 2
+mkdir -p $CHEF_DIR/cookbooks
+mkdir -p $CHEF_DIR/checksum
+mkdir -p $APT_DIR
+
+#fix bug with upstart not working during install
+if [[ ! -L "/sbin/initctl" ]]; then
+    dpkg-divert --local --rename --add /sbin/initctl
+    ln -s /bin/true /sbin/initctl
+fi
+
+/sbin/ip route | awk '/default/ { print "Acquire::http::Proxy \"http://"\$3":8000\";" }' > /etc/apt/apt.conf.d/30proxy
+mkdir /chef
+echo '
+file_cache_path "/chef"
+cookbook_path "'$CHEF_DIR'/cookbooks"
+checksum_path "'$CHEF_DIR'/checksum"
+' > $CHEF_DIR/solo.rb
+cat $CHEF_DIR/solo.rb
+echo "/app/provision /opt/chef/embedded/bin/berks install --path $CHEF_DIR/cookbooks"
+
+cd /app/provision && /opt/chef/embedded/bin/berks install --path $CHEF_DIR/cookbooks
+
+chef-solo -c $CHEF_DIR/solo.rb -o 'recipe[$APP::default]' --force-formatter --no-fork
+pip install -r /app/requirements.txt
+EOF
+)
+echo $COOKBOOK_INSTALL
+
