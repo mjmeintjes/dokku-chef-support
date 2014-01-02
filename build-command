@@ -5,8 +5,9 @@ APP="$1"; IMAGE="app/$APP"
 CACHE_DIR="$DOKKU_ROOT/$APP/cache"
 CHEF_DIR=/cache/chef
 APT_DIR=/cache/apt
-COOKBOOK_INSTALL=$(cat <<EOF
+cat >$CACHE_DIR/chef-build <<EOF
 #!/bin/bash
+echo "starting"
 sleep 2
 mkdir -p $CHEF_DIR/cookbooks
 mkdir -p $CHEF_DIR/checksum
@@ -33,6 +34,9 @@ cd /app/provision && /opt/chef/embedded/bin/berks install --path $CHEF_DIR/cookb
 chef-solo -c $CHEF_DIR/solo.rb -o 'recipe[$APP::default]' --force-formatter --no-fork
 pip install -r /app/requirements.txt
 EOF
-)
-echo $COOKBOOK_INSTALL
+
+#echo -e "$COOKBOOK_INSTALL" > $CACHE_DIR/chef-build
+chmod +x $CACHE_DIR/chef-build
+
+echo /cache/chef-build
 
