@@ -7,7 +7,7 @@ if docker images | grep --quiet "$IMAGE\s"; then
   echo $IMAGE
 else
     if docker images | grep --quiet mattsum/buildstep-chef; then
-      docker build -t mattsum/buildstep-chef $DIR/docker-image
+      docker build -t mattsum/buildstep-chef $DIR/docker-image > /dev/null
     fi
     echo "mattsum/buildstep-chef"
 fi
