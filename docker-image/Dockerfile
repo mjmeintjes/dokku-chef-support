@@ -1,4 +1,4 @@
-FROM progrium:buildstep
+FROM progrium/buildstep
 MAINTAINER mattsum "matthys@mattsum.com"
 
 RUN apt-get -y update
