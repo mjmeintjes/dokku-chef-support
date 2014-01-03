@@ -19,8 +19,11 @@ if [[ ! -L "/sbin/initctl" ]]; then
     dpkg-divert --local --rename --add /sbin/initctl
     ln -s /bin/true /sbin/initctl
 fi
-
-/sbin/ip route | awk '/default/ { print "Acquire::http::Proxy \"http://"\$3":8000\";" }' > /etc/apt/apt.conf.d/30proxy
+if [[ -n "$APT_PROXY" ]]; then
+    echo $APT_PROXY > /etc/apt/apt.conf.d/30proxy
+else
+    /sbin/ip route | awk '/default/ { print "Acquire::http::Proxy \"http://"\$3":8000\";" }' > /etc/apt/apt.conf.d/30proxy
+fi
 mkdir /chef
 echo '
 file_cache_path "/chef"
