@@ -1,10 +1,16 @@
 #!/usr/bin/env bash
 set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 IMAGE="$1"
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" #current directory
 #test if the image already exists, if it does then return i
 if docker images | grep --quiet "$IMAGE\s"; then
   echo $IMAGE
 else
-  echo "mattsum/buildstep-chef"
+    if docker images | grep --quiet mattsum/buildstep-chef; then
+        echo "mattsum/buildstep-chef"
+    else
+        docker build -t mattsum/buildstep-chef $DIR/docker-image 1>&2
+        echo "mattsum/buildstep-chef"
+    fi
 fi
 
